@@ -713,6 +713,8 @@ class MudGameGUI(tk.Frame):
         self.master = master
         self.player = None
         self.is_topmost = False
+        self.in_pause = False
+        self.temp_pomodoro_seconds_left = 0
 
         # Pomodoro / Movement variables
         self.pomodoro_running = False
@@ -758,10 +760,13 @@ class MudGameGUI(tk.Frame):
         self.pomo_label.pack(side=tk.LEFT)
 
         self.btn_pomo_start = tk.Button(self.pomo_frame, text="Start Pomodoro", command=self.start_pomodoro, state=tk.DISABLED)
-        self.btn_pomo_start.pack(side=tk.LEFT, padx=(10, 5))
+        self.btn_pomo_start.pack(side=tk.LEFT, padx=(0, 5))
+
+        self.btn_pomo_pause = tk.Button(self.pomo_frame, text="Pause Pomodoro", command=self.pause_pomodoro, state=tk.DISABLED)
+        self.btn_pomo_pause.pack(side=tk.LEFT, padx=(0, 5))
 
         self.btn_pomo_stop = tk.Button(self.pomo_frame, text="Stop Pomodoro", command=self.stop_pomodoro, state=tk.DISABLED)
-        self.btn_pomo_stop.pack(side=tk.LEFT)
+        self.btn_pomo_stop.pack(side=tk.LEFT, padx=(0, 5))
 
         # ScrolledText for output, change font size and fg bg of output area here:
         self.output_area = scrolledtext.ScrolledText(self, wrap=tk.WORD, height=5, width=80, fg="green", bg="black", state=tk.DISABLED)
@@ -803,6 +808,7 @@ class MudGameGUI(tk.Frame):
         if not name:
             name = "idleHero"
 
+
         # Choose a class
         class_choice = tk.simpledialog.askstring("Choose Class", "Choose: warrior / mage / rogue", parent=self)
         if not class_choice or class_choice.lower() not in CLASS_STATS.keys():
@@ -824,6 +830,7 @@ class MudGameGUI(tk.Frame):
 
         self.btn_save.config(state=tk.NORMAL)
         self.btn_pomo_start.config(state=tk.NORMAL)
+        self.btn_pomo_pause.config(state=tk.NORMAL)
         self.btn_pomo_stop.config(state=tk.NORMAL)
 
         self.look_around()
@@ -837,6 +844,7 @@ class MudGameGUI(tk.Frame):
             self.look_around()
             self.btn_save.config(state=tk.NORMAL)
             self.btn_pomo_start.config(state=tk.NORMAL)
+            self.btn_pomo_pause.config(state=tk.NORMAL)
             self.btn_pomo_stop.config(state=tk.NORMAL)
         else:
             messagebox.showinfo("Load Game", "No saved game found, mate!")
@@ -863,9 +871,23 @@ class MudGameGUI(tk.Frame):
             return
         self.pomodoro_running = True
         self.pomodoro_in_break = False
-        self.pomodoro_seconds_left = POMODORO_FOCUS_TIME
+        if self.in_pause:
+            self.pomodoro_seconds_left = self.temp_pomodoro_seconds_left
+            self.in_pause = False
+        else:
+            self.pomodoro_seconds_left = POMODORO_FOCUS_TIME
         self.update_pomodoro_label()
         self.tick_pomodoro()
+
+    def pause_pomodoro(self):
+        if not self.pomodoro_running:
+            self.write_line("No Pomodoro session is running right now.")
+            return
+        self.pomodoro_running = False
+        self.pomodoro_in_break = False
+        self.in_pause = True
+        self.temp_pomodoro_seconds_left = self.pomodoro_seconds_left
+        self.update_pomodoro_label()
 
     def stop_pomodoro(self):
         if not self.pomodoro_running:
@@ -908,7 +930,7 @@ class MudGameGUI(tk.Frame):
                 self.after(1000, self.tick_pomodoro)
 
     def update_pomodoro_label(self):
-        if not self.pomodoro_running:
+        if not self.pomodoro_running and not self.in_pause:
             self.pomo_label.config(text="Pomodoro: Not Running")
         else:
             label = "Break" if self.pomodoro_in_break else "Focus"
