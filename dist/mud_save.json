@@ -1,0 +1,1 @@
+{"name": "Asoro", "player_class": "warrior", "level": 10, "exp": 15, "max_hp": 210, "hp": 209, "base_attack": 26, "inventory": [], "location": "castle_entrance", "tasks": {"complete_daily_job": false, "drink_from_stream": false, "stun_opponent": true}, "pomodoro_streak": 0}
